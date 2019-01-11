@@ -4,6 +4,7 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/img"
 	"github.com/marzhall/zanth/libraries"
+	"github.com/marzhall/zanth/libraries/worldParts"
 
     "fmt"
     "time"
@@ -13,57 +14,6 @@ import (
 var winTitle string = "Zanth"
 var winWidth, winHeight int = 1920, 1080
 var joysticks [16]*sdl.Joystick
-
-type Player struct {
-    Xpos, Ypos int
-    Height, Width int
-    Sprite *sdl.Texture
-    Rect *sdl.Rect
-}
-
-func (player Player) GetX() int {
-	return int(player.Rect.X)
-}
-
-func (player Player) GetY() int {
-	return int(player.Rect.Y)
-}
-
-func (player Player) GetHeight() int {
-	return int(player.Rect.H)
-}
-
-func (player Player) GetWidth() int {
-	return int(player.Rect.W)
-}
-
-func (player Player) GetTexture() *sdl.Texture {
-	return player.Sprite
-}
-
-func (player Player) GetRect() *sdl.Rect {
-	return player.Rect
-}
-
-func (player *Player) SetX(x int) {
-	player.Rect.X = int32(x)
-}
-
-func (player *Player) SetY(y int) {
-	player.Rect.Y = int32(y)
-}
-
-func (player *Player) SetHeight(h int) {
-	player.Rect.H = int32(h)
-}
-
-func (player *Player) SetWidth(w int) {
-	player.Rect.W = int32(w)
-}
-
-func (player *Player) SetTexture(t *sdl.Texture) {
-	player.Sprite = t
-}
 
 func loadTiles(tileSources *[]string, renderer *sdl.Renderer) []*sdl.Texture {
 	tileSet := make([]*sdl.Texture, len(*tileSources))
@@ -89,7 +39,6 @@ func loadTiles(tileSources *[]string, renderer *sdl.Renderer) []*sdl.Texture {
 
 func main() {
     fmt.Println("start");
-    xpos, ypos := int32(0), int32(0)
 
     // main loop
     tileSources := make([]string, 1)
@@ -116,6 +65,7 @@ func main() {
         return
     }
 
+    player := worldParts.Player{tiles[0], &sdl.Rect{0, 0, 100, 100}}
 	sdl.JoystickEventState(sdl.ENABLE)
     for inputState.Running {
         for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -181,28 +131,28 @@ func main() {
         }
 
         if inputState.MovingYU {
-            if ypos > 0 {
-                ypos -= 20*1
+            if player.GetY() > 0 {
+                player.SetY(player.GetY() - 20)
             } else {
-                ypos = 0
+                player.SetY(0)
             }
         }
         if inputState.MovingYD {
-            ypos += 20*1
+            player.SetY(player.GetY() + 20)
         }
         if inputState.MovingXR {
-            xpos += 20*1
+            player.SetX(player.GetX() + 20)
         }
         if inputState.MovingXL {
-            if xpos > 0 {
-                xpos -= 20*1
+            if player.GetX() > 0 {
+                player.SetX(player.GetX() - 20)
             } else {
-                xpos = 0
+                player.SetX(0)
             }
         }
 
         renderer.Clear()
-        renderer.Copy(tiles[0], nil, &sdl.Rect{xpos,ypos, int32(100), int32(100)})
+        renderer.Copy(player.GetTexture(), nil, player.GetRect())
         renderer.Present()
         time.Sleep(10)
     }
