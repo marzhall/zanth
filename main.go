@@ -37,6 +37,51 @@ func loadTiles(tileSources *[]string, renderer *sdl.Renderer) []*sdl.Texture {
 	return tileSet
 }
 
+const EventTypes (
+    EntityCreated = iota
+)
+
+const EntityTypes (
+    Player = iota
+    Bullet
+)
+
+type EntityCreatedEvent struct {
+    EventType EventTypes
+    EntityType EntityTypes
+    Xpos int
+    Ypos int
+}
+
+type Event interface {
+    GetEventType() EventTypes
+}
+
+func HandleEntityCreated(event EntityCreatedEvent) {
+    eCEvent, ok := event.(EntityCreatedEvent)
+    if (ok != nil) {
+        panic("Got an EntityCreated event that didn't cast to EntityCreatedEvent!")
+    }
+
+    switch eCEvent.EntityType {
+    case Player:
+        inputState := worldParts.GenerateInputState()
+        player := worldParts.Player{tiles[0], &sdl.Rect{ecEvent.Xpos, eCEvent.YPos, 100, 100}, inputState}
+        libraries.AllGameEntities.Add(&player)
+    }
+}
+
+
+func GameEventProcessor(eventBus chan Event, done chan int) {
+    select {
+    case event := <-eventBus:
+        switch event.GetEventType() {
+        case EntityCreated {
+            HandleEntityCreated(event)
+        }
+    }
+}
+
 func main() {
     fmt.Println("start");
 
@@ -44,7 +89,6 @@ func main() {
     tileSources := make([]string, 1)
     tileSources[0] = "assets/cliffy.PNG"
 
-	inputState := libraries.GenerateInputState()
 	window, err := sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
 		winWidth, winHeight, sdl.WINDOW_FULLSCREEN_DESKTOP | sdl.WINDOW_INPUT_GRABBED)
 	if err != nil {
@@ -65,13 +109,17 @@ func main() {
         return
     }
 
-    player := worldParts.Player{tiles[0], &sdl.Rect{0, 0, 100, 100}}
+    //player := worldParts.Player{tiles[0], &sdl.Rect{0, 0, 100, 100}}
+    //libraries.AllGameEntities.Add(&player)
+
+    ebus := make(chan Event)
 	sdl.JoystickEventState(sdl.ENABLE)
-    for inputState.Running {
+    running := true
+    for running {
         for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
             switch t := event.(type) {
                 case *sdl.QuitEvent:
-                    inputState.Running = false
+                    running = false
                 case *sdl.KeyDownEvent:
 					if (t.Keysym.Sym == sdl.K_UP && t.Repeat <= 0) {
 						inputState.MovingYU = true
@@ -86,7 +134,7 @@ func main() {
 						inputState.MovingXL = true
                     }
                     if (t.Keysym.Sym == sdl.K_ESCAPE && t.Repeat <= 0) {
-                        inputState.Running = false
+                        running = false
                     }
                 case *sdl.KeyUpEvent:
 					if (t.Keysym.Sym == sdl.K_UP && t.Repeat <= 0) {

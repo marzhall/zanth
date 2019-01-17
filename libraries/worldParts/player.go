@@ -2,9 +2,25 @@ package worldParts
 
 import "github.com/veandco/go-sdl2/sdl"
 
+type InputState struct {
+	MovingXL, MovingXR, MovingYD, MovingYU, Running bool
+}
+
+func GenerateInputState() InputState {
+	inputState := InputState{
+		MovingXL: false,
+		MovingXR: false,
+		MovingYD: false,
+		MovingYU: false,
+		Running: true }
+
+	return inputState;
+}
+
 type Player struct {
     Sprite *sdl.Texture
     Rect *sdl.Rect
+    InputsState InputState
 }
 
 func (player Player) GetX() int {
